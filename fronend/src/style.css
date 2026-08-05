@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+.pdf-viewer :deep(.vue-pdf-embed__page) {
+  margin-bottom: 30px;
+}
