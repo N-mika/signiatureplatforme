@@ -1,5 +1,15 @@
+export interface SignaturePosition {
+  page: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  pdfWidth: number,
+  pdfHeight: number
+};
+
 export type User = {
-  id : string
+  id: string
   email: string;
   password: string;
 }
@@ -20,8 +30,8 @@ export interface Document {
   originalFile: PdfFile;
   signedFile?: PdfFile;
   signatureToken: string;
+  signaturePositions: SignaturePosition;
   tokenUsed: boolean;
-  status: DocumentStatus;
-  createdAt: string;
-  signedAt?: string | null;
+  status: string;
+  signedAt?: Date | null;
 }

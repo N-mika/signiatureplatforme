@@ -3,7 +3,7 @@
     <div class="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow">
       <h1 class="mb-6 text-3xl font-bold">Signature du {{ documentData?.title }}</h1>
       <div class="mb-8 overflow-hidden rounded-xl border">
-        <VuePdfEmbed v-if="pdfUrl" :source="pdfUrl" class="pdf-viewer"/>
+        <VuePdfEmbed v-if="pdfUrl" :source="pdfUrl" class="pdf-viewer" />
       </div>
       <!-- Zone signature -->
       <div v-if="!documentData?.tokenUsed">
@@ -23,12 +23,15 @@
         </div>
       </div>
       <!-- Bouton final -->
-      <button v-if="!documentData?.tokenUsed" class="mt-8 w-full rounded-xl bg-blue-600 py-4 font-semibold text-white hover:bg-blue-700"
+      <button v-if="!documentData?.tokenUsed"
+        class="mt-8 w-full rounded-xl bg-blue-600 py-4 font-semibold text-white hover:bg-blue-700"
         @click="signDocument">
         Signer le document
       </button>
       <div v-else class="mt-8 rounded-xl bg-green-100 p-6 text-center text-green-700">
-        <div class="text-lg font-semibold text-center flex items-center gap-2"><CheckCircle :size="20" /> Le document a été signé avec succès.</div>
+        <div class="text-lg font-semibold text-center flex items-center gap-2">
+          <CheckCircle :size="20" /> Le document a été signé avec succès.
+        </div>
       </div>
     </div>
   </div>
@@ -60,19 +63,13 @@ const error = ref<string>("");
 onMounted(async () => {
 
   if (canvas.value) {
-    signaturePad = new SignaturePad(canvas.value, {
-      penColor: "black",
-    });
+    signaturePad = new SignaturePad(canvas.value, { penColor: "black" });
   }
-
   await onLoadDocument();
-
 });
 
 const onLoadDocument = async () => {
-
   loading.value = true;
-
   const response = await onGetByIdService<Document>("sign", token);
 
   if (!response) {
@@ -102,11 +99,7 @@ const clearSignature = () => {
 const saveSignature = () => {
 
   if (!signaturePad || signaturePad.isEmpty()) {
-
-    alert(
-      "Veuillez ajouter votre signature"
-    );
-
+    alert("Veuillez ajouter votre signature" );
     return;
   }
   signatureImage.value = signaturePad.toDataURL("image/png");
@@ -120,11 +113,14 @@ const signDocument = async () => {
     return;
   }
   const signature = signaturePad.toDataURL("image/png");
-  const result = await signDocumentService(token, signature);
-  if (result === "success") {
-    alert("Document signé avec succès");
-  } else {
-    alert("Une erreur est survenue.");
+  if (documentData.value) {
+    const result = await signDocumentService(token, signature, documentData.value?.signaturePositions);
+    if (result === "success") {
+      alert("Document signé avec succès");
+      onLoadDocument();
+    } else {
+      alert("Une erreur est survenue.");
+    }
   }
 };
 

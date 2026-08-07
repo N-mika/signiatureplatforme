@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { User , Document } from "./type";
+import type { User , Document, SignaturePosition } from "./type";
 
 // const API = "https://transportmaritime.onrender.com";
 export const API = "http://localhost:3000";
@@ -79,7 +79,8 @@ export const loginService = async (email: string, password: string): Promise<Use
 export const uploadDocumentService = async (
   title: string,
   recipientEmail: string,
-  pdf: File
+  pdf: File, 
+  signaturePosition : SignaturePosition
 ): Promise<Document | null> => {
   try {
     const formData = new FormData();
@@ -87,7 +88,7 @@ export const uploadDocumentService = async (
     formData.append("title", title);
     formData.append("recipientEmail", recipientEmail);
     formData.append("pdf", pdf);
-
+    formData.append("signaturePositions", JSON.stringify(signaturePosition));
 
     const response = await axios.post<Document>(
       `${API}/upload`,
@@ -115,13 +116,15 @@ export const uploadDocumentService = async (
 
 export const signDocumentService = async (
   token: string,
-  signatureImage: string
+  signatureImage: string,
+  signaturePositions : SignaturePosition
 ): Promise<"success" | "error"> => {
   try {
     const response = await axios.post(
       `${API}/sign/${token}`,
       {
-        signatureImage
+        signatureImage,
+        signaturePositions
       }
     );
 

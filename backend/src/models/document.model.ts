@@ -6,6 +6,15 @@ interface PdfFile {
   size: number;
   type: string;
 }
+interface SignaturePosition {
+  page: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+  pdfWidth: number,
+  pdfHeight: number
+};
 
 export interface IDocument extends Document {
   title: string;
@@ -13,10 +22,45 @@ export interface IDocument extends Document {
   originalFile: PdfFile;
   signedFile?: PdfFile;
   signatureToken: string;
+  signaturePositions: SignaturePosition;
   tokenUsed: boolean;
   status: string;
   signedAt?: Date | null;
 }
+const signaturePositionSchema = new mongoose.Schema(
+  {
+    page: {
+      type: Number,
+      required: true
+    },
+    x: {
+      type: Number,
+      required: true
+    },
+    y: {
+      type: Number,
+      required: true
+    },
+    width: {
+      type: Number,
+      required: true
+    },
+    height: {
+      type: Number,
+      required: true
+    },
+    pdfWidth: {
+      type: Number,
+      required: true
+    },
+    pdfHeight: {
+      type: Number,
+      required: true
+    }
+  },
+  {
+    _id: false
+  });
 
 const pdfFileSchema = new mongoose.Schema(
   {
@@ -71,7 +115,10 @@ const documentSchema = new mongoose.Schema<IDocument>({
     required: true,
     unique: true
   },
-
+  signaturePositions: {
+    type: signaturePositionSchema,
+    required: true
+  },
   tokenUsed: {
     type: Boolean,
     default: false
