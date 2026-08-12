@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { User , Document, SignaturePosition } from "./type";
+import type { User, Document} from "./type";
 
 // const API = "https://transportmaritime.onrender.com";
 export const API = "http://localhost:3000";
@@ -21,7 +21,7 @@ export const onAddService = async (
 // UPDATE
 export const onUpdateService = async (
   nameUpdate: string,
-  params: User | Document
+  params: User
 ): Promise<"success" | "error"> => {
   try {
     const response = await axios.put(`${API}/${nameUpdate.toLowerCase()}/${params.id}`, params);
@@ -75,62 +75,35 @@ export const loginService = async (email: string, password: string): Promise<Use
   }
 };
 
-// UPLOAD PDF DOCUMENT
+
 export const uploadDocumentService = async (
   title: string,
-  recipientEmail: string,
-  pdf: File, 
-  signaturePosition : SignaturePosition
-): Promise<Document | null> => {
+  presidentEmail: string,
+  memberEmail: string,
+  file: File
+) => {
   try {
     const formData = new FormData();
 
     formData.append("title", title);
-    formData.append("recipientEmail", recipientEmail);
-    formData.append("pdf", pdf);
-    formData.append("signaturePositions", JSON.stringify(signaturePosition));
+    formData.append("presidentEmail", presidentEmail);
+    formData.append("memberEmail", memberEmail);
 
-    const response = await axios.post<Document>(
-      `${API}/upload`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-
+    // IMPORTANT
+    formData.append("pdf", file);
+    const response = await axios.post(`${API}/upload`, formData);
 
     return response.data;
-
-  } catch (error: any) {
-
-    console.error(
-      "Erreur upload document",
-      error.response?.data || error
-    );
-
+  } catch (error) {
+    console.error("Erreur upload document :", error);
     return null;
   }
 };
 
-export const signDocumentService = async (
-  token: string,
-  signatureImage: string,
-  signaturePositions : SignaturePosition
-): Promise<"success" | "error"> => {
+export const signDocumentService = async (token: string, signatureImage: string): Promise<"success" | "error"> => {
   try {
-    const response = await axios.post(
-      `${API}/sign/${token}`,
-      {
-        signatureImage,
-        signaturePositions
-      }
-    );
-
-    return response.status >= 200 && response.status < 300
-      ? "success"
-      : "error";
+    const response = await axios.post(`${API}/sign/${token}`, { signatureImage});
+    return response.status >= 200 && response.status < 300 ? "success" : "error";
 
   } catch (error) {
     console.error(error);

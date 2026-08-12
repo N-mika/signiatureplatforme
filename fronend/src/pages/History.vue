@@ -1,10 +1,16 @@
 <script setup lang="ts">
 
+import { onMounted, ref } from "vue";
 import Navbar from "../components/Navbar.vue";
-import { documentsMock } from "../data/documents.mock";
+import { onGetService } from "../data/service.ts";
+import type { Document } from "../data/type.ts";
 
-const documents = documentsMock;
+const documents = ref<Document[]>([]);
 
+onMounted(async()=> {
+  const response = await onGetService<Document>('alldocument');
+  documents.value = response;
+})
 function statusClass(status: string) {
 
   if (status === "Signé") {
@@ -69,12 +75,9 @@ function statusClass(status: string) {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="document in documents" :key="document.id" class="border-b hover:bg-gray-50">
+                <tr v-for="document in documents" :key="document._id" class="border-b hover:bg-gray-50">
                   <td class="p-4 font-medium">
                     {{ document.title }}
-                  </td>
-                  <td class="p-4">
-                    {{ document.recipientEmail }}
                   </td>
                   <td class="p-4">
                     <span :class="[
@@ -86,7 +89,7 @@ function statusClass(status: string) {
                     </span>
                   </td>
                   <td class="p-4 text-gray-600">
-                    {{ document.createdAt }}
+                    <!-- {{ document.createdAt }} -->
                   </td>
                   <td class="p-4 text-gray-600">
                     <span v-if="document.signedAt">
@@ -97,9 +100,9 @@ function statusClass(status: string) {
                     </span>
                   </td>
                   <td class="p-4">
-                    <button class="rounded-lg bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200">
+                    <RouterLink :to="`/signDocument/${document.signers.president.signatureToken}`" class="rounded-lg bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200">
                       Voir
-                    </button>
+                    </RouterLink>
                   </td>
                 </tr>
               </tbody>

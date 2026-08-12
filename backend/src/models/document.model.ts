@@ -6,53 +6,78 @@ interface PdfFile {
   size: number;
   type: string;
 }
+
 interface SignaturePosition {
-  page: number,
-  x: number,
-  y: number,
-  width: number,
-  height: number
-  pdfWidth: number,
-  pdfHeight: number
-};
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  pdfWidth: number;
+  pdfHeight: number;
+}
+
+interface Signer {
+  role: "president" | "member";
+  email: string;
+
+  signatureToken: string;
+  tokenUsed: boolean;
+
+  position: SignaturePosition;
+
+  signed: boolean;
+  signedAt?: Date | null;
+}
 
 export interface IDocument extends Document {
   title: string;
-  recipientEmail: string;
+
   originalFile: PdfFile;
   signedFile?: PdfFile;
-  signatureToken: string;
-  signaturePositions: SignaturePosition;
-  tokenUsed: boolean;
-  status: string;
+
+  signers: {
+    president: Signer;
+    member: Signer;
+  };
+
+  status: "En attente" | "En cours" | "Signé";
+
   signedAt?: Date | null;
 }
+
 const signaturePositionSchema = new mongoose.Schema(
   {
     page: {
       type: Number,
       required: true
     },
+
     x: {
       type: Number,
       required: true
     },
+
     y: {
       type: Number,
       required: true
     },
+
     width: {
       type: Number,
       required: true
     },
+
     height: {
       type: Number,
       required: true
     },
+
     pdfWidth: {
       type: Number,
       required: true
     },
+
     pdfHeight: {
       type: Number,
       required: true
@@ -60,7 +85,8 @@ const signaturePositionSchema = new mongoose.Schema(
   },
   {
     _id: false
-  });
+  }
+);
 
 const pdfFileSchema = new mongoose.Schema(
   {
@@ -88,55 +114,99 @@ const pdfFileSchema = new mongoose.Schema(
     _id: false
   }
 );
-const documentSchema = new mongoose.Schema<IDocument>({
 
-  title: {
-    type: String,
-    required: true
-  },
+const signerSchema = new mongoose.Schema(
+  {
+    role: {
+      type: String,
+      enum: ["president", "member"],
+      required: true
+    },
 
-  recipientEmail: {
-    type: String,
-    required: true
-  },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true
+    },
 
-  originalFile: {
-    type: pdfFileSchema,
-    required: true
-  },
+    signatureToken: {
+      type: String,
+      required: true
+    },
 
+    tokenUsed: {
+      type: Boolean,
+      default: false
+    },
 
-  signedFile: {
-    type: pdfFileSchema,
-  },
+    position: {
+      type: signaturePositionSchema,
+      required: true
+    },
 
-  signatureToken: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  signaturePositions: {
-    type: signaturePositionSchema,
-    required: true
-  },
-  tokenUsed: {
-    type: Boolean,
-    default: false
-  },
+    signed: {
+      type: Boolean,
+      default: false
+    },
 
-  status: {
-    type: String,
-    default: "En attente"
+    signedAt: {
+      type: Date,
+      default: null
+    }
   },
-
-  signedAt: {
-    type: Date,
-    default: null
+  {
+    _id: false
   }
+);
 
-}, {
-  timestamps: true
-});
+const documentSchema = new mongoose.Schema<IDocument>(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true
+    },
 
+    originalFile: {
+      type: pdfFileSchema,
+      required: true
+    },
 
-export default mongoose.model<IDocument>("Document", documentSchema);
+    signedFile: {
+      type: pdfFileSchema,
+      default: null
+    },
+
+    signers: {
+      president: {
+        type: signerSchema,
+        required: true
+      },
+
+      member: {
+        type: signerSchema,
+        required: true
+      }
+    },
+
+    status: {
+      type: String,
+      enum: ["En attente", "En cours", "Signé"],
+      default: "En attente"
+    },
+
+    signedAt: {
+      type: Date,
+      default: null
+    }
+  },
+  {
+    timestamps: true
+  }
+);
+
+export default mongoose.model<IDocument>(
+  "Document",
+  documentSchema
+);

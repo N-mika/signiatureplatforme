@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createDocument, getDocumentByToken, getDocumentFile, signDocument } from "../controllers/document.controller";
+import { createDocument, getAllDocument, getDocumentByToken, getDocumentFile, signDocument } from "../controllers/document.controller";
 
 import { upload } from "../middleware/upload.middleware";
 const router = Router();
@@ -9,6 +9,9 @@ router.post("/upload", upload.single("pdf"), createDocument);
 
 // Récupérer un document avec son token
 router.get("/sign/:token", getDocumentByToken);
+
+// écupérer tous les documents
+router.get("/alldocument", getAllDocument);
 
 // Accès sécurisé au fichier PDF
 router.get("/file/:token", getDocumentFile);
