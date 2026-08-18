@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
 
-export function generateSignatureToken(){
+export const generateSignatureToken = ()=>{
   return crypto.randomBytes(32).toString("hex");
 }

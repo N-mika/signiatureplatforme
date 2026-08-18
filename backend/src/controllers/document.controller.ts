@@ -5,6 +5,7 @@ import fs from "fs";
 
 import Document from "../models/document.model";
 import { generateSignatureToken } from "../services/token.service";
+import { sendSignatureEmail } from "../services/email.service";
 
 // Positions prédéfinies
 const SIGNATURE_POSITIONS = {
@@ -40,12 +41,15 @@ export const createDocument = async (req: Request, res: Response) => {
     const file = req.file;
 
     if (!file) {
-      return res.status(400).json({ message: "Le fichier PDF est obligatoire" });
+      return res.status(400).json({
+        message: "Le fichier PDF est obligatoire"
+      });
     }
 
     if (!title || !presidentEmail || !memberEmail) {
-      console.log(title, presidentEmail, memberEmail)
-      return res.status(400).json({ message: "Le titre, l'email du Président et l'email du Membre sont obligatoires" });
+      return res.status(400).json({
+        message: "Le titre, l'email du Président et l'email du Membre sont obligatoires"
+      });
     }
 
     if (file.mimetype !== "application/pdf") {
@@ -54,9 +58,6 @@ export const createDocument = async (req: Request, res: Response) => {
       });
     }
 
-    /**
-     * Un token différent pour chaque signataire
-     */
     const presidentToken = generateSignatureToken();
     const memberToken = generateSignatureToken();
 
@@ -93,25 +94,34 @@ export const createDocument = async (req: Request, res: Response) => {
       },
 
       status: "En attente",
-
       signedAt: null
     });
+    console.log("EMAIL_USER :", process.env.EMAIL_USER);
+    console.log("EMAIL_PASSWORD existe :", !!process.env.EMAIL_PASSWORD);
+    await sendSignatureEmail(
+      presidentEmail,
+      title,
+      "president",
+      presidentToken
+    );
+
+    await sendSignatureEmail(
+      memberEmail,
+      title,
+      "member",
+      memberToken
+    );
 
     return res.status(201).json({
-      message: "Document créé avec succès",
-
+      message: "Document créé et envoyé aux signataires",
       document,
-
       links: {
         president: `/sign/${presidentToken}`,
         member: `/sign/${memberToken}`
       }
     });
   } catch (error) {
-    console.error(
-      "Erreur création document :",
-      error
-    );
+    console.error("Erreur création document :", error);
 
     return res.status(500).json({
       message: "Erreur serveur",
@@ -379,7 +389,7 @@ export const signDocument = async (
         message: "Fichier PDF introuvable"
       });
     }
-    const pdfBytes = fs.readFileSync( sourcePath );
+    const pdfBytes = fs.readFileSync(sourcePath);
 
     const pdfDoc = await PDFDocument.load(pdfBytes);
 
