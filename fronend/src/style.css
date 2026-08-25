@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary: #539635;
+  --color-aesna-blue: #50ade6;
+  --color-aesna-yellow: #ffd600;
+  --color-black: #272727;
+  --color-white: #fdfdfd;
+}
 .pdf-viewer :deep(.vue-pdf-embed__page) {
   margin-bottom: 30px;
+}
+.router-link-exact-active{
+  color: #539635;
 }

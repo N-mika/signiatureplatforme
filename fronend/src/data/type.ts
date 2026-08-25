@@ -50,20 +50,15 @@ export interface Signers {
 
 export interface Document {
   _id: string;
-
   title: string;
-
   originalFile: PdfFile;
   signedFile?: PdfFile | null;
-
   signers: Signers;
-
   status: DocumentStatus;
-
   signedAt: string | null;
-
   createdAt: string;
   updatedAt: string;
+  token : string;
 }
 
 export interface SignDocument {

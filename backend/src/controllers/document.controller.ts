@@ -173,7 +173,7 @@ export const getDocumentByToken = async (req: Request, res: Response) => {
       document.signers[signerRole];
 
     return res.json({
-      id: document._id,
+      _id: document._id,
       title: document.title,
 
       status: document.status,
@@ -202,6 +202,27 @@ export const getDocumentByToken = async (req: Request, res: Response) => {
   }
 };
 
+export const getDocumentById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const document = await Document.findById(id);
+
+    if (!document) {
+      return res.status(404).json({
+        message: "Document introuvable",
+      });
+    }
+
+    return res.status(200).json(document);
+  } catch (err) {
+    console.error("Erreur getDocumentById :", err);
+
+    return res.status(500).json({
+      message: "Erreur serveur",
+    });
+  }
+};
 /**
  * ---------------------------------------------------------
  * Servir le PDF

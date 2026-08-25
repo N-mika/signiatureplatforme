@@ -1,7 +1,6 @@
 import axios from "axios";
-import type { User, Document} from "./type";
+import type { User, Document } from "./type";
 
-// const API = "https://transportmaritime.onrender.com";
 export const API = "http://localhost:3000";
 
 // CREATE
@@ -102,11 +101,25 @@ export const uploadDocumentService = async (
 
 export const signDocumentService = async (token: string, signatureImage: string): Promise<"success" | "error"> => {
   try {
-    const response = await axios.post(`${API}/sign/${token}`, { signatureImage});
+    const response = await axios.post(`${API}/sign/${token}`, { signatureImage });
     return response.status >= 200 && response.status < 300 ? "success" : "error";
 
   } catch (error) {
     console.error(error);
     return "error";
   }
+};
+
+export const onDownloadSignedDocumentService = async (id: string) => {
+  window.open(`${API}/file/signed/${id}`, "_blank");
+};
+export const onDownloadAllSignedDocumentsService = () => {
+  const link = document.createElement("a");
+
+  link.href = `${API}/file/signed/all`;
+  link.download = "documents-signes.zip";
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 };
