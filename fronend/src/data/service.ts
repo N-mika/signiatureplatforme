@@ -19,11 +19,11 @@ export const onAddService = async (
 
 // UPDATE
 export const onUpdateService = async (
-  nameUpdate: string,
+  endPoint: string,
   params: User
 ): Promise<"success" | "error"> => {
   try {
-    const response = await axios.put(`${API}/${nameUpdate.toLowerCase()}/${params.id}`, params);
+    const response = await axios.put(`${API}/${endPoint.toLowerCase()}`, params);
     return response.status >= 200 && response.status < 300 ? "success" : "error";
   } catch (error) {
     console.log(error);
@@ -123,3 +123,13 @@ export const onDownloadAllSignedDocumentsService = () => {
   link.click();
   link.remove();
 };
+export const authService = async <T>(email: string, password: string): Promise<T | null> => {
+  try {
+    const data = { email, password }
+    const response = await axios.post(`${API}/auth`, data);
+    return response.data;
+  } catch (error) {
+    console.log(error)
+    return null
+  }
+}

@@ -90,6 +90,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { FileSignature, Mail, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck } from "lucide-vue-next";
+import { authService } from "../data/service";
+import type { User, UserConnected } from "../data/type";
 
 const email = ref<string>("");
 const password = ref<string>("");
@@ -97,18 +99,26 @@ const showPassword = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const error = ref<string>("");
 
-const emits = defineEmits<{ (e: "loged", loged: boolean): void }>();
+
+const emits = defineEmits<{ (e: "loged", loged: UserConnected): void }>();
 const login = async () => {
-  if (!email.value || !password.value) {
+  if (!email || !password) {
     error.value = "Veuillez remplir tous les champs.";
     return;
   }
 
   try {
-    loading.value = true;
-    error.value = "";
-    emits("loged", false)
-    console.log({ email: email.value, password: password.value });
+    const user = await authService<User>(email.value, password.value)
+    
+    if (user) {
+      const userConnecter : UserConnected = {
+        user : user,
+        isConnected : true
+      }
+      emits("loged", userConnecter)
+      error.value = "";
+      loading.value = true;
+    }
   } catch (err) {
     console.error(err);
     error.value = "Email ou mot de passe incorrect.";

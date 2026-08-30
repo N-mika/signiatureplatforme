@@ -33,10 +33,7 @@ export const sendSignatureEmail = async (
 
   const signatureUrl = `${frontendUrl}/signdocument/${token}`;
 
-  const roleLabel =
-    role === "president"
-      ? "Président"
-      : "Membre";
+  const roleLabel = role === "president" ? "Président" : "Membre";
 
   await transporter.sendMail({
     from: `"Signature Platform" <${process.env.EMAIL_USER}>`,
@@ -83,7 +80,51 @@ export const sendSignatureEmail = async (
     `
   });
 };
+export const sendInvitation = async (
+  email: string,
+  invitationLink: string,
+  name: string,
+) => {
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Invitation - Signature Carte membre AESNA",
+    html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Bienvenue ${name} 👋</h2>
 
+          <p>
+            Vous avez été invité à rejoindre la plateforme
+            <strong>Signature Carte membre AESNA</strong>
+            en tant qu'administrateur.
+          </p>
+
+          <p>
+            Cliquez sur le bouton ci-dessous pour créer votre mot de passe.
+          </p>
+
+          <a
+            href="${invitationLink}"
+            style="
+              display: inline-block;
+              padding: 12px 20px;
+              background: #059669;
+              color: white;
+              text-decoration: none;
+              border-radius: 8px;
+              font-weight: bold;
+            "
+          >
+            Créer mon mot de passe
+          </a>
+
+          <p style="margin-top: 20px; color: #777;">
+            Si vous n'avez pas été invité, vous pouvez ignorer cet email.
+          </p>
+        </div>
+      `
+  })
+}
 transporter.verify()
   .then(() => {
     console.log("✅ Connexion SMTP réussie !");

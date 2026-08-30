@@ -25,7 +25,7 @@
                 <div class="relative">
                   <FileText :size="19" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
 
-                  <input v-model="title" type="text" placeholder="Ex. Contrat de travail"
+                  <input v-model="title" type="text" placeholder="Ex. Carte Mika"
                     class="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-aesna-black outline-none transition placeholder:text-gray-400 focus:border-aesna-green focus:ring-2 focus:ring-aesna-green/10" />
                 </div>
               </div>

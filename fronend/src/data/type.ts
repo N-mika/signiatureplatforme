@@ -1,8 +1,13 @@
 export type User = {
   id: string
   email: string;
-  password: string;
+  password?: string;
+  name : string;
 }
+export type UserConnected = {
+  user : User,
+  isConnected : boolean
+} 
 export interface DocumentSigner {
   role: SignerRole;
   email: string;
