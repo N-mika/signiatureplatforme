@@ -1,7 +1,9 @@
 import axios from "axios";
 import type { User, Document } from "./type";
 
-export const API = "http://localhost:3000";
+// export const API = "http://localhost:3000";
+export const API = "https://signiatureplatforme.onrender.com/";
+
 
 // CREATE
 export const onAddService = async (
