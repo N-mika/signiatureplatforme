@@ -126,16 +126,21 @@ export const sendInvitation = async (
       `
   })
 }
-console.log('mika')
-transporter.verify()
-  .then(() => {
-    console.log("✅ Connexion SMTP réussie !");
-    console.log("EMAIL_USER :", process.env.EMAIL_USER);
-    console.log(
-      "EMAIL_PASSWORD configuré :",
-      !!process.env.EMAIL_PASSWORD
-    );
-  })
-  .catch((error) => {
-    console.error("❌ Connexion SMTP échouée :", error);
-  });
+export const verifyMailer = async (): Promise<void> => {
+  if (!process.env.EMAIL_USER) {
+    throw new Error("EMAIL_USER n'est pas configuré");
+  }
+
+  if (!process.env.EMAIL_PASSWORD) {
+    throw new Error("EMAIL_PASSWORD n'est pas configuré");
+  }
+
+  await transporter.verify();
+
+  console.log("✅ Connexion SMTP réussie !");
+  console.log("EMAIL_USER :", process.env.EMAIL_USER);
+  console.log(
+    "EMAIL_PASSWORD configuré :",
+    !!process.env.EMAIL_PASSWORD
+  );
+};
