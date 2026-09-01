@@ -126,6 +126,7 @@ export const sendInvitation = async (
       `
   })
 }
+console.log('mika')
 transporter.verify()
   .then(() => {
     console.log("✅ Connexion SMTP réussie !");
