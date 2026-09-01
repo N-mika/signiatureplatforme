@@ -289,7 +289,8 @@ export const getDocumentFile = async (
         message: "Fichier PDF introuvable"
       });
     }
-
+    console.log("📁 Fichier demandé :", document.originalFile.path);
+    console.log("📄 Fichier existe :", fs.existsSync(document.originalFile.path));
     return res.sendFile(
       path.resolve(document.originalFile.path)
     );

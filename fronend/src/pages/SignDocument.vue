@@ -109,7 +109,7 @@ const onLoadDocument = async () => {
     }
 
     documentData.value = response;
-    pdfUrl.value = `${API}/file/${token}?t=${Date.now()}`;
+    pdfUrl.value = `${API}/file/${token}`;
 
     loading.value = false;
 
