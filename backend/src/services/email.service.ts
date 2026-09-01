@@ -1,16 +1,36 @@
+import { Resend } from "resend";
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
-dotenv.config();
+ dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
+const apiKey = process.env.RESEND_API_KEY;
+
+if (!apiKey) {
+  throw new Error("RESEND_API_KEY n'est pas configuré");
+}
+
+const resend = new Resend(apiKey);
+
+const sendEmail = async (
+  to: string,
+  subject: string,
+  html: string
+) => {
+  const { data, error } = await resend.emails.send({
+    from: "Signature Carte membre AESNA <onboarding@resend.dev>",
+    to: [to],
+    subject,
+    html
+  });
+
+  if (error) {
+    console.error("Erreur Resend :", error);
+    throw new Error(error.message);
   }
-});
+
+  console.log("✅ Email envoyé avec succès :", data?.id);
+
+  return data;
+};
 
 export const sendSignatureEmail = async (
   email: string,
@@ -24,25 +44,16 @@ export const sendSignatureEmail = async (
     throw new Error("FRONTEND_URL n'est pas configuré");
   }
 
-  if (!process.env.EMAIL_USER) {
-    throw new Error("EMAIL_USER n'est pas configuré");
-  }
-
-  if (!process.env.EMAIL_PASSWORD) {
-    throw new Error("EMAIL_PASSWORD n'est pas configuré");
-  }
-
   const signatureUrl = `${frontendUrl}/signdocument/${token}`;
 
-  const roleLabel = role === "president" ? "Président" : "Membre";
+  const roleLabel =
+    role === "president" ? "Président" : "Membre";
 
-  await transporter.sendMail({
-    from: `"Signature Platform" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: `Document à signer - ${title}`,
-    html: `
+  await sendEmail(
+    email,
+    `Document à signer - ${title}`,
+    `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
-        
         <h2>Document à signer</h2>
 
         <p>Bonjour,</p>
@@ -76,71 +87,52 @@ export const sendSignatureEmail = async (
         <p style="color: #666; font-size: 13px;">
           Ce lien est personnel et vous permet d'accéder à votre signature.
         </p>
-
       </div>
     `
-  });
+  );
 };
+
 export const sendInvitation = async (
   email: string,
   invitationLink: string,
-  name: string,
+  name: string
 ) => {
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: "Invitation - Signature Carte membre AESNA",
-    html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>Bienvenue ${name} 👋</h2>
+  await sendEmail(
+    email,
+    "Invitation - Signature Carte membre AESNA",
+    `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Bienvenue ${name} 👋</h2>
 
-          <p>
-            Vous avez été invité à rejoindre la plateforme
-            <strong>Signature Carte membre AESNA</strong>
-            en tant qu'administrateur.
-          </p>
+        <p>
+          Vous avez été invité à rejoindre la plateforme
+          <strong>Signature Carte membre AESNA</strong>
+          en tant qu'administrateur.
+        </p>
 
-          <p>
-            Cliquez sur le bouton ci-dessous pour créer votre mot de passe.
-          </p>
+        <p>
+          Cliquez sur le bouton ci-dessous pour créer votre mot de passe.
+        </p>
 
-          <a
-            href="${invitationLink}"
-            style="
-              display: inline-block;
-              padding: 12px 20px;
-              background: #059669;
-              color: white;
-              text-decoration: none;
-              border-radius: 8px;
-              font-weight: bold;
-            "
-          >
-            Créer mon mot de passe
-          </a>
+        <a
+          href="${invitationLink}"
+          style="
+            display: inline-block;
+            padding: 12px 20px;
+            background: #059669;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+          "
+        >
+          Créer mon mot de passe
+        </a>
 
-          <p style="margin-top: 20px; color: #777;">
-            Si vous n'avez pas été invité, vous pouvez ignorer cet email.
-          </p>
-        </div>
-      `
-  })
-}
-export const verifyMailer = async (): Promise<void> => {
-  if (!process.env.EMAIL_USER) {
-    throw new Error("EMAIL_USER n'est pas configuré");
-  }
-
-  if (!process.env.EMAIL_PASSWORD) {
-    throw new Error("EMAIL_PASSWORD n'est pas configuré");
-  }
-
-  await transporter.verify();
-
-  console.log("✅ Connexion SMTP réussie !");
-  console.log("EMAIL_USER :", process.env.EMAIL_USER);
-  console.log(
-    "EMAIL_PASSWORD configuré :",
-    !!process.env.EMAIL_PASSWORD
+        <p style="margin-top: 20px; color: #777;">
+          Si vous n'avez pas été invité, vous pouvez ignorer cet email.
+        </p>
+      </div>
+    `
   );
 };
