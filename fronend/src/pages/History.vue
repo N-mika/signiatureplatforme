@@ -93,7 +93,7 @@
                         Voir
                       </RouterLink>
 
-                      <button v-if="document.status === 'Signé'" @click="downloadDocument(document._id)"
+                      <button v-if="document.status === 'Signé' && document.signedFile?.path" @click="onDownloadSignedDocumentService(document.signedFile?.path , document.title)"
                         :disabled="downloadingId === document._id"
                         class="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-primary hover:bg-emerald-100 disabled:opacity-50">
                         <Download :size="18" />
@@ -165,15 +165,6 @@ const filteredDocuments = computed(() => {
     return matchesSearch && matchesStatus;
   });
 });
-
-const downloadDocument = (id: string) => {
-  downloadingId.value = id;
-  onDownloadSignedDocumentService(id);
-
-  setTimeout(() => {
-    downloadingId.value = null;
-  }, 1000);
-};
 
 function statusClass(status: string) {
   if (status === "Signé") return "bg-green-100 text-green-700";

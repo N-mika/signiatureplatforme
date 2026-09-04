@@ -1,15 +1,13 @@
 import axios from "axios";
-import type { User, Document } from "./type";
+import type { User, Document, documentCreate } from "./type";
+import { supabase } from "../tools/supabase";
 
 // export const API = "http://localhost:3000";
 export const API = "https://signiatureplatforme.onrender.com";
 
 
 // CREATE
-export const onAddService = async (
-  nameAdd: string,
-  params: User | Document
-): Promise<"success" | "error"> => {
+export const onAddService = async (nameAdd: string, params: User | Document | documentCreate): Promise<"success" | "error"> => {
   try {
     const response = await axios.post(`${API}/${nameAdd.toLowerCase()}`, params);
     return response.status >= 200 && response.status < 300 ? "success" : "error";
@@ -112,18 +110,26 @@ export const signDocumentService = async (token: string, signatureImage: string)
   }
 };
 
-export const onDownloadSignedDocumentService = async (id: string) => {
-  window.open(`${API}/file/signed/${id}`, "_blank");
-};
-export const onDownloadAllSignedDocumentsService = () => {
-  const link = document.createElement("a");
+export const onDownloadSignedDocumentService = async (filePath: string, fileName: string) => {
+  try {
+    const { data, error } = await supabase.storage.from("aesnasignature").createSignedUrl(filePath, 60*3);
 
-  link.href = `${API}/file/signed/all`;
-  link.download = "documents-signes.zip";
+    if (error || !data?.signedUrl) {
+      console.error("Erreur URL signée :", error);
+      return;
+    }
 
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+    const link = document.createElement("a");
+    link.href = data.signedUrl;
+    link.download = fileName;
+    link.target = "_blank";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    console.error("Erreur téléchargement :", error);
+  }
 };
 export const authService = async <T>(email: string, password: string): Promise<T | null> => {
   try {

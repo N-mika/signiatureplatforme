@@ -45,9 +45,9 @@
       </div>
 
       <button v-if="documentData && !documentData.signer.signed"
-        class="mt-8 w-full rounded-xl bg-blue-600 py-4 font-semibold text-white hover:bg-blue-700"
+        class="mt-8 w-full rounded-xl bg-primary py-4 font-semibold text-white hover:bg-primary/50"
         @click="signDocument">
-        Signer le document
+        Signer la carte
       </button>
 
       <div v-else-if="documentData?.signer.signed" class="mt-8 rounded-xl bg-green-100 p-6 text-center text-green-700">
@@ -57,7 +57,7 @@
         </div>
 
         <p v-if="documentData.signer.signedAt" class="mt-2 text-sm">
-          Signé le {{ new Date(documentData.signer.signedAt).toLocaleString() }}
+          Signé le {{ formatDate(documentData.signer.signedAt) }}
         </p>
       </div>
 
@@ -73,10 +73,11 @@ import { ref, onMounted, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import SignaturePad from "signature_pad";
 import type { SignDocument } from "../data/type";
-import { API, onGetByIdService, signDocumentService } from "../data/service";
+import { onGetByIdService, signDocumentService } from "../data/service";
 import VuePdfEmbed from "vue-pdf-embed";
 import { CheckCircle, Eraser } from "lucide-vue-next";
 import Loading from "../components/Loading.vue";
+import { formatDate } from "../tools/tools.ts";
 
 
 const route = useRoute();
@@ -97,8 +98,8 @@ onMounted(async () => {
 });
 
 const onLoadDocument = async () => {
+  loading.value = true;
   try {
-    loading.value = true;
     error.value = "";
 
     const response = await onGetByIdService<SignDocument>("sign", token);
@@ -109,8 +110,10 @@ const onLoadDocument = async () => {
     }
 
     documentData.value = response;
-    pdfUrl.value = `${API}/file/${token}`;
-
+    const fileResponse = await onGetByIdService<{ url: string }>('file', token);
+    if (fileResponse) {
+      pdfUrl.value = fileResponse.url;
+    }
     loading.value = false;
 
     await nextTick();
@@ -127,6 +130,8 @@ const onLoadDocument = async () => {
   } catch (err) {
     console.error("Erreur chargement document :", err);
     error.value = "Impossible de charger le document";
+    loading.value = false;
+  } finally {
     loading.value = false;
   }
 };
@@ -150,7 +155,7 @@ const signDocument = async () => {
     alert("Veuillez signer le document");
     return;
   }
-
+  loading.value = true;
   try {
     const signature = signaturePad.toDataURL("image/png");
 
@@ -172,6 +177,8 @@ const signDocument = async () => {
   } catch (err) {
     console.error("Erreur signature :", err);
     alert("Une erreur est survenue.");
+  } finally {
+    loading.value = false;
   }
 };
 </script>

@@ -25,7 +25,7 @@
 
             <div class="overflow-auto bg-gray-100 p-4">
               <div class="mx-auto overflow-hidden rounded-lg bg-white shadow">
-                <VuePdfEmbed  v-if="pdfUrl" :source="pdfUrl" class="pdf-viewer"/>
+                <VuePdfEmbed v-if="pdfUrl" :source="pdfUrl" class="pdf-viewer" />
               </div>
             </div>
           </section>
@@ -76,10 +76,7 @@
               </div>
 
               <div class="h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  class="h-full rounded-full bg-aesna-green transition-all"
-                  :style="{ width: `${progress}%` }"
-                />
+                <div class="h-full rounded-full bg-aesna-green transition-all" :style="{ width: `${progress}%` }" />
               </div>
 
               <p class="mt-3 text-sm text-gray-500">
@@ -104,18 +101,13 @@
                 <div v-if="documentData.signers?.president" class="rounded-xl border border-gray-100 p-4">
                   <div class="flex items-start justify-between gap-3">
                     <div class="flex min-w-0 items-center gap-3">
-                      <div
-                        :class="[
-                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-                          documentData.signers.president.signed
-                            ? 'bg-aesna-green/10 text-aesna-green'
-                            : 'bg-yellow-50 text-yellow-600'
-                        ]"
-                      >
-                        <Check
-                          v-if="documentData.signers.president.signed"
-                          :size="20"
-                        />
+                      <div :class="[
+                        'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+                        documentData.signers.president.signed
+                          ? 'bg-aesna-green/10 text-aesna-green'
+                          : 'bg-yellow-50 text-yellow-600'
+                      ]">
+                        <Check v-if="documentData.signers.president.signed" :size="20" />
                         <Clock v-else :size="20" />
                       </div>
 
@@ -129,14 +121,12 @@
                       </div>
                     </div>
 
-                    <span
-                      :class="[
-                        'shrink-0 rounded-full px-2.5 py-1 text-xs font-medium',
-                        documentData.signers.president.signed
-                          ? 'bg-aesna-green/10 text-aesna-green'
-                          : 'bg-yellow-50 text-yellow-600'
-                      ]"
-                    >
+                    <span :class="[
+                      'shrink-0 rounded-full px-2.5 py-1 text-xs font-medium',
+                      documentData.signers.president.signed
+                        ? 'bg-aesna-green/10 text-aesna-green'
+                        : 'bg-yellow-50 text-yellow-600'
+                    ]">
                       {{
                         documentData.signers.president.signed
                           ? "Signé"
@@ -145,34 +135,23 @@
                     </span>
                   </div>
 
-                  <div
-                    v-if="documentData.signers.president.signedAt"
-                    class="mt-3 border-t pt-3 text-xs text-gray-400"
-                  >
+                  <div v-if="documentData.signers.president.signedAt" class="mt-3 border-t pt-3 text-xs text-gray-400">
                     Signé le
                     {{ formatDate(documentData.signers.president.signedAt) }}
                   </div>
                 </div>
 
                 <!-- Membre -->
-                <div
-                  v-if="documentData.signers?.member"
-                  class="rounded-xl border border-gray-100 p-4"
-                >
+                <div v-if="documentData.signers?.member" class="rounded-xl border border-gray-100 p-4">
                   <div class="flex items-start justify-between gap-3">
                     <div class="flex min-w-0 items-center gap-3">
-                      <div
-                        :class="[
-                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-                          documentData.signers.member.signed
-                            ? 'bg-aesna-green/10 text-aesna-green'
-                            : 'bg-yellow-50 text-yellow-600'
-                        ]"
-                      >
-                        <Check
-                          v-if="documentData.signers.member.signed"
-                          :size="20"
-                        />
+                      <div :class="[
+                        'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+                        documentData.signers.member.signed
+                          ? 'bg-aesna-green/10 text-aesna-green'
+                          : 'bg-yellow-50 text-yellow-600'
+                      ]">
+                        <Check v-if="documentData.signers.member.signed" :size="20" />
                         <Clock v-else :size="20" />
                       </div>
 
@@ -186,14 +165,12 @@
                       </div>
                     </div>
 
-                    <span
-                      :class="[
-                        'shrink-0 rounded-full px-2.5 py-1 text-xs font-medium',
-                        documentData.signers.member.signed
-                          ? 'bg-aesna-green/10 text-aesna-green'
-                          : 'bg-yellow-50 text-yellow-600'
-                      ]"
-                    >
+                    <span :class="[
+                      'shrink-0 rounded-full px-2.5 py-1 text-xs font-medium',
+                      documentData.signers.member.signed
+                        ? 'bg-aesna-green/10 text-aesna-green'
+                        : 'bg-yellow-50 text-yellow-600'
+                    ]">
                       {{
                         documentData.signers.member.signed
                           ? "Signé"
@@ -202,10 +179,7 @@
                     </span>
                   </div>
 
-                  <div
-                    v-if="documentData.signers.member.signedAt"
-                    class="mt-3 border-t pt-3 text-xs text-gray-400"
-                  >
+                  <div v-if="documentData.signers.member.signedAt" class="mt-3 border-t pt-3 text-xs text-gray-400">
                     Signé le
                     {{ formatDate(documentData.signers.member.signedAt) }}
                   </div>
@@ -218,10 +192,7 @@
         </div>
 
         <!-- Erreur -->
-        <div
-          v-if="error"
-          class="rounded-xl bg-red-50 p-4 text-sm text-red-700"
-        >
+        <div v-if="error" class="rounded-xl bg-red-50 p-4 text-sm text-red-700">
           {{ error }}
         </div>
       </div>
@@ -235,10 +206,11 @@ import { useRoute } from "vue-router";
 import { Check, Clock, FileText } from "lucide-vue-next";
 import VuePdfEmbed from "vue-pdf-embed";
 
-import { API, onGetByIdService } from "../data/service";
+import { onGetByIdService } from "../data/service";
 import Loading from "../components/Loading.vue";
 import type { Document } from "../data/type.ts";
 import Navbar from "../components/Navbar.vue";
+import { formatDate } from "../tools/tools.ts";
 
 const route = useRoute();
 const id = route.params.id as string;
@@ -265,7 +237,9 @@ const onLoadDocument = async () => {
     }
 
     documentData.value = response;
-    pdfUrl.value = `${API}/file/${documentData.value.signers.member.signatureToken}?t=${Date.now()}`;
+    // Récupération de l'URL du fichier PDF associé au document par preference celle token du president 
+    const fileUrl = await onGetByIdService<{ url: string }>('file', documentData.value.signers.president.signatureToken);
+    fileUrl && (pdfUrl.value = fileUrl.url);
   } catch (err) {
     console.error("Erreur chargement document :", err);
     error.value = "Impossible de charger le document";
@@ -309,15 +283,4 @@ const progressText = computed(() => {
   return `${signedCount.value} signataire(s) sur ${totalSigners.value} ont signé.`;
 });
 
-function formatDate(date?: string | Date | null) {
-  if (!date) return "-";
-
-  return new Date(date).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
 </script>

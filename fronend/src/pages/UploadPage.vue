@@ -25,7 +25,7 @@
                 <div class="relative">
                   <FileText :size="19" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
 
-                  <input v-model="title" type="text" placeholder="Ex. Carte Mika"
+                  <input v-model="title" required type="text" placeholder="Ex. Carte Mika"
                     class="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-aesna-black outline-none transition placeholder:text-gray-400 focus:border-aesna-green focus:ring-2 focus:ring-aesna-green/10" />
                 </div>
               </div>
@@ -47,7 +47,7 @@
                     <div class="relative">
                       <User :size="19" class="absolute left-3 top-1/2 -translate-y-1/2 text-aesna-green" />
 
-                      <input v-model="presidentEmail" type="email" placeholder="president@email.com"
+                      <input v-model="presidentEmail" required type="email" placeholder="president@email.com"
                         class="w-full rounded-xl border border-gray-200 py-3 pl-10 pr-4 text-sm outline-none transition placeholder:text-gray-400 focus:border-aesna-green focus:ring-2 focus:ring-aesna-green/10" />
                     </div>
                   </div>
@@ -59,7 +59,7 @@
                     <div class="relative">
                       <User :size="19" class="absolute left-3 top-1/2 -translate-y-1/2 text-aesna-blue" />
 
-                      <input v-model="memberEmail" type="email" placeholder="membre@email.com"
+                      <input v-model="memberEmail" type="email" required placeholder="membre@email.com"
                         class="w-full rounded-xl border border-gray-200 py-3 pl-10 pr-4 text-sm outline-none transition placeholder:text-gray-400 focus:border-aesna-blue focus:ring-2 focus:ring-aesna-blue/10" />
                     </div>
                   </div>
@@ -189,7 +189,9 @@
 import { computed, ref } from "vue";
 import { Upload, FileText, X, User, Send, Info, Loader2 } from "lucide-vue-next";
 import Navbar from "../components/Navbar.vue";
-import { uploadDocumentService } from "../data/service";
+// import { uploadDocumentService } from "../data/service";
+import { uploadFile } from "../tools/tools.ts";
+import { onAddService } from "../data/service.ts";
 
 const title = ref("");
 const presidentEmail = ref("");
@@ -246,25 +248,31 @@ const submit = async () => {
 
   try {
     loading.value = true;
+    if (pdfFile.value) {
+      // ajoute le fichier dans supabase storage
+      const file = await uploadFile(pdfFile.value, 'original');
+      if (file) {
+        const document = {
+          title: title.value,
+          presidentEmail: presidentEmail.value,
+          memberEmail: memberEmail.value,
+          file: file
+        }
+        const response = await onAddService("createdocument", document);
+        if (response !== "success") {
+          alert("Erreur lors de l'envoi.");
+          return;
+        }
+        alert("Document envoyé avec succès.");
 
-    const result = await uploadDocumentService(
-      title.value,
-      presidentEmail.value,
-      memberEmail.value,
-      pdfFile.value
-    );
+        title.value = "";
+        presidentEmail.value = "";
+        memberEmail.value = "";
+        removeFile();
+      }
 
-    if (!result) {
-      alert("Erreur lors de l'envoi.");
-      return;
     }
 
-    alert("Document envoyé avec succès.");
-
-    title.value = "";
-    presidentEmail.value = "";
-    memberEmail.value = "";
-    removeFile();
   } catch (error) {
     console.error("Erreur lors de l'envoi :", error);
     alert("Une erreur est survenue lors de l'envoi.");

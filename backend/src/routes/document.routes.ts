@@ -1,14 +1,15 @@
 import { Router } from "express";
-import { createDocument, getAllDocument, getDocumentById, getDocumentByToken, getDocumentFile, signDocument } from "../controllers/document.controller";
+import { createDocument, getAllDocument, getDocumentById, getDocumentByToken, getDocumentFile } from "../controllers/document.controller";
 
 import { upload } from "../middleware/upload.middleware";
 import { downloadSignedDocument } from "../controllers/downloade.controller";
 import { auth } from "../controllers/auth.controller";
 import { activateUser, createUser, getAllUser, getUserById } from "../controllers/user.controller";
+import { signDocument } from "../controllers/signedocument.controller";
 const router = Router();
 
 // Upload d'un document PDF
-router.post("/upload", upload.single("pdf"), createDocument);
+router.post("/createdocument" , createDocument);
 
 // Récupérer un document avec son token
 router.get("/sign/:token", getDocumentByToken);

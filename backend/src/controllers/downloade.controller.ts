@@ -1,51 +1,48 @@
 import { Request, Response } from "express";
-import fs from "fs";
-import path from "path";
 import Document from "../models/document.model";
+import { supabase } from "../supabase";
 
-export const downloadSignedDocument = async (
-  req: Request,
-  res: Response
-) => {
+export const downloadSignedDocument = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    console.log("📥 ID document :", id);
 
     const document = await Document.findById(id);
 
     if (!document) {
       return res.status(404).json({
-        message: "Document introuvable",
+        message: "Document introuvable"
       });
     }
 
-    if (!document.signedFile) {
-      return res.status(404).json({
-        message: "Le document n'est pas encore signé",
-      });
+    if (!document.signedFile?.path) {
+      return res.status(404).json({ message: "Le document n'est pas encore signé" });
     }
 
-    const filePath = path.resolve(document.signedFile.path);
+    const filePath = document.signedFile.path;
 
-    console.log("📁 Fichier signé :", filePath);
+    const { data, error } = await supabase.storage.from("aesnasignature").download(filePath);
 
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({
-        message: "Le fichier signé est introuvable",
-      });
+    if (error || !data) {
+      console.error("Erreur Supabase :", error);
+
+      return res.status(404).json({ message: "Fichier signé introuvable" });
     }
 
-    return res.download(
-      filePath,
-      document.signedFile.name
+    const buffer = Buffer.from(await data.arrayBuffer());
+
+    res.setHeader("Content-Type", document.signedFile.type || "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${document.signedFile.name}"`
     );
+    res.setHeader("Content-Length", buffer.length);
 
+    return res.send(buffer);
   } catch (error) {
-    console.error("❌ Erreur downloadSignedDocument :", error);
+    console.error("Erreur downloadSignedDocument :", error);
 
     return res.status(500).json({
-      message: "Erreur serveur",
+      message: "Erreur serveur"
     });
   }
 };

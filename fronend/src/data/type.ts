@@ -2,12 +2,12 @@ export type User = {
   id: string
   email: string;
   password?: string;
-  name : string;
+  name: string;
 }
 export type UserConnected = {
-  user : User,
-  isConnected : boolean
-} 
+  user: User,
+  isConnected: boolean
+}
 export interface DocumentSigner {
   role: SignerRole;
   email: string;
@@ -63,7 +63,7 @@ export interface Document {
   signedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  token : string;
+  token: string;
 }
 
 export interface SignDocument {
@@ -73,4 +73,11 @@ export interface SignDocument {
   signer: DocumentSigner;
   originalFile: PdfFile;
   signedFile?: PdfFile | null;
+}
+
+export interface documentCreate {
+  title: string;
+  presidentEmail: string;
+  memberEmail: string;
+  file: PdfFile;
 }
