@@ -144,3 +144,12 @@ export const sendInvitation = async (
     `
   );
 };
+export const verifyEmailConnection = async (): Promise<void> => {
+  try {
+    await transporter.verify();
+
+    console.log("✅ Connexion Gmail SMTP réussie");
+  } catch (error) {
+    console.error("❌ Connexion Gmail SMTP échouée :", error);
+  }
+}

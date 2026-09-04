@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import app from "./app";
 import { connectDatabase } from "./config/database";
 import { initUser } from "./config/initUser";
+import { verifyEmailConnection } from "./services/email.service";
 // import { verifyMailer } from "./services/email.service";
 
 dotenv.config();
@@ -13,7 +14,7 @@ const startServer = async () => {
     await connectDatabase();
 
     await initUser();
-    // await verifyMailer()
+    await verifyEmailConnection()
 
     app.listen(PORT, () => {
       console.log(`Serveur lancé sur ${PORT}`);
