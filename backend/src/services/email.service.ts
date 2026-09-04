@@ -1,35 +1,43 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import dotenv from "dotenv";
- dotenv.config();
 
-const apiKey = process.env.RESEND_API_KEY;
+dotenv.config();
 
-if (!apiKey) {
-  throw new Error("RESEND_API_KEY n'est pas configuré");
+const emailUser = process.env.EMAIL_USER;
+const emailPassword = process.env.EMAIL_PASSWORD;
+
+if (!emailUser || !emailPassword) {
+  throw new Error(
+    "EMAIL_USER ou EMAIL_PASSWORD n'est pas configuré"
+  );
 }
 
-const resend = new Resend(apiKey);
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  // family: 4,
+  auth: {
+    user: emailUser,
+    pass: emailPassword
+  }
+});
 
 const sendEmail = async (
   to: string,
   subject: string,
   html: string
 ) => {
-  const { data, error } = await resend.emails.send({
-    from: "Signature Carte membre AESNA <onboarding@resend.dev>",
-    to: [to],
+  const info = await transporter.sendMail({
+    from: `Signature Carte membre AESNA <${emailUser}>`,
+    to,
     subject,
     html
   });
 
-  if (error) {
-    console.error("Erreur Resend :", error);
-    throw new Error(error.message);
-  }
+  console.log("✅ Email envoyé avec succès :", info.messageId);
 
-  console.log("✅ Email envoyé avec succès :", data?.id);
-
-  return data;
+  return info;
 };
 
 export const sendSignatureEmail = async (
