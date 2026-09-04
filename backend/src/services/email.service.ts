@@ -14,13 +14,16 @@ if (!emailUser || !emailPassword) {
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  // family: 4,
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: emailUser,
     pass: emailPassword
-  }
+  },
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 20000
 });
 
 const sendEmail = async (
