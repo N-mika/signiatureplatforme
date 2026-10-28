@@ -2,11 +2,7 @@ import axios from "axios";
 import type { User, Document, documentCreate } from "./type";
 import { supabase } from "../tools/supabase";
 
-// En développement, on passe par le proxy Vite (/api) pour éviter les blocages CORS.
-// En production, on utilise VITE_API_URL s'il est défini, sinon le backend déployé.
-export const API =
-  import.meta.env.VITE_API_URL ??
-  (import.meta.env.DEV ? "/api" : "https://signiatureplatforme.onrender.com");
+export const API = "https://signiatureplatforme.onrender.com";
 
 
 // CREATE
