@@ -9,6 +9,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  "https://signature-aesna.vercel.app",
+  "https://aesnasignaturecartemembre.vercel.app",
 ].filter((origin): origin is string => Boolean(origin));
 
 app.use(cors({
