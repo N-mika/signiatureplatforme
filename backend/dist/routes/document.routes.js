@@ -30,4 +30,5 @@ router.get("/getuser/:token", user_controller_1.getUserById);
 // Activer un compte 
 router.put("/activateuser", user_controller_1.activateUser);
 router.get("/getalluser", user_controller_1.getAllUser);
+router.delete("/user/:id", user_controller_1.deleteUser);
 exports.default = router;

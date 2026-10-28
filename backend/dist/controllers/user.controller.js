@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.activateUser = exports.getAllUser = exports.getUserById = exports.createUser = void 0;
+exports.activateUser = exports.getAllUser = exports.getUserById = exports.deleteUser = exports.createUser = void 0;
 const crypto_1 = require("crypto");
 const user_1 = __importDefault(require("../models/user"));
 const email_service_1 = require("../services/email.service");
@@ -12,31 +12,46 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const createUser = async (req, res) => {
     try {
         const { name, email } = req.body;
-        console.log(name, email);
         if (!name || !email) {
             return res.status(400).json({
                 message: "Le nom et l'email sont obligatoires"
             });
         }
-        const existingUser = await user_1.default.findOne({ email });
-        // if (existingUser) {
-        //   return res.status(400).json({
-        //     message: "Cet email est déjà utilisé"
-        //   });
-        // }
+        const normalizedEmail = String(email).trim().toLowerCase();
+        // Un seul compte par adresse email.
+        const existingUser = await user_1.default.findOne({ email: normalizedEmail });
+        if (existingUser) {
+            return res.status(409).json({
+                message: "Cet email est déjà utilisé par un autre administrateur."
+            });
+        }
         const invitationToken = (0, token_service_1.generateSignatureToken)();
         const user = await user_1.default.create({
             id: (0, crypto_1.randomUUID)(),
-            name,
-            email,
+            name: String(name).trim(),
+            email: normalizedEmail,
             password: null,
             isActif: false,
             invitationToken
         });
-        const invitationLink = `${process.env.FRONTEND_URL}/admin/${invitationToken}`;
-        await (0, email_service_1.sendInvitation)(email, invitationLink, name);
+        const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+        const invitationLink = `${frontendUrl}/create-password/${invitationToken}`;
+        // L'échec d'envoi de l'email ne doit pas annuler la création du compte :
+        // l'administrateur peut copier le lien d'invitation depuis l'interface.
+        let emailSent = true;
+        try {
+            await (0, email_service_1.sendInvitation)(normalizedEmail, invitationLink, user.name);
+        }
+        catch (emailError) {
+            emailSent = false;
+            console.error("Erreur envoi invitation :", emailError);
+        }
         return res.status(201).json({
-            message: "Administrateur créé et invitation envoyée",
+            message: emailSent
+                ? "Administrateur créé et invitation envoyée"
+                : "Administrateur créé, mais l'email d'invitation n'a pas pu être envoyé.",
+            emailSent,
+            invitationLink,
             user: {
                 id: user.id,
                 name: user.name,
@@ -53,6 +68,33 @@ const createUser = async (req, res) => {
     }
 };
 exports.createUser = createUser;
+const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await user_1.default.findOne({ id });
+        if (!user) {
+            return res.status(404).json({
+                message: "Utilisateur introuvable",
+            });
+        }
+        if (user.id === "admin") {
+            return res.status(400).json({
+                message: "Le compte administrateur principal ne peut pas être supprimé.",
+            });
+        }
+        await user.deleteOne();
+        return res.status(200).json({
+            message: "Utilisateur supprimé.",
+        });
+    }
+    catch (error) {
+        console.error("Erreur suppression utilisateur :", error);
+        return res.status(500).json({
+            message: "Erreur serveur",
+        });
+    }
+};
+exports.deleteUser = deleteUser;
 const getUserById = async (req, res) => {
     const { token } = req.params;
     try {
@@ -88,7 +130,8 @@ const getAllUser = async (req, res) => {
     try {
         const users = await user_1.default
             .find()
-            .select("-password");
+            .select("-password")
+            .sort({ createdAt: -1 });
         return res.status(200).json(users);
     }
     catch (error) {
@@ -113,6 +156,11 @@ const activateUser = async (req, res) => {
                 message: "Le mot de passe est requis.",
             });
         }
+        if (String(password).length < 8) {
+            return res.status(400).json({
+                message: "Le mot de passe doit contenir au moins 8 caractères.",
+            });
+        }
         const user = await user_1.default.findOne({ id: id });
         if (!user) {
             return res.status(404).json({
@@ -127,6 +175,8 @@ const activateUser = async (req, res) => {
         const hashedPassword = await bcrypt_1.default.hash(password, 10);
         user.password = hashedPassword;
         user.isActif = true;
+        // Le lien d'invitation ne doit plus fonctionner après activation.
+        user.invitationToken = null;
         await user.save();
         return res.status(200).json({
             message: "Compte activé avec succès.",

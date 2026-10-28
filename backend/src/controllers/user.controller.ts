@@ -8,7 +8,6 @@ import bcrypt from 'bcrypt'
 export const createUser = async (req: Request, res: Response) => {
   try {
     const { name, email } = req.body;
-    console.log(name, email)
 
     if (!name || !email) {
       return res.status(400).json({
@@ -16,30 +15,48 @@ export const createUser = async (req: Request, res: Response) => {
       });
     }
 
-    const existingUser = await UserShema.findOne({ email });
+    const normalizedEmail = String(email).trim().toLowerCase();
 
-    // if (existingUser) {
-    //   return res.status(400).json({
-    //     message: "Cet email est déjà utilisé"
-    //   });
-    // }
+    // Un seul compte par adresse email.
+    const existingUser = await UserShema.findOne({ email: normalizedEmail });
+
+    if (existingUser) {
+      return res.status(409).json({
+        message: "Cet email est déjà utilisé par un autre administrateur."
+      });
+    }
 
     const invitationToken = generateSignatureToken();
 
     const user = await UserShema.create({
       id: randomUUID(),
-      name,
-      email,
+      name: String(name).trim(),
+      email: normalizedEmail,
       password: null,
       isActif: false,
       invitationToken
     });
 
-    const invitationLink = `${process.env.FRONTEND_URL}/admin/${invitationToken}`;
-    await sendInvitation(email, invitationLink, name);
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+    const invitationLink = `${frontendUrl}/create-password/${invitationToken}`;
+
+    // L'échec d'envoi de l'email ne doit pas annuler la création du compte :
+    // l'administrateur peut copier le lien d'invitation depuis l'interface.
+    let emailSent = true;
+
+    try {
+      await sendInvitation(normalizedEmail, invitationLink, user.name);
+    } catch (emailError) {
+      emailSent = false;
+      console.error("Erreur envoi invitation :", emailError);
+    }
 
     return res.status(201).json({
-      message: "Administrateur créé et invitation envoyée",
+      message: emailSent
+        ? "Administrateur créé et invitation envoyée"
+        : "Administrateur créé, mais l'email d'invitation n'a pas pu être envoyé.",
+      emailSent,
+      invitationLink,
       user: {
         id: user.id,
         name: user.name,
@@ -52,6 +69,38 @@ export const createUser = async (req: Request, res: Response) => {
 
     return res.status(500).json({
       message: "Erreur serveur"
+    });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const user = await UserShema.findOne({ id });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Utilisateur introuvable",
+      });
+    }
+
+    if (user.id === "admin") {
+      return res.status(400).json({
+        message: "Le compte administrateur principal ne peut pas être supprimé.",
+      });
+    }
+
+    await user.deleteOne();
+
+    return res.status(200).json({
+      message: "Utilisateur supprimé.",
+    });
+  } catch (error) {
+    console.error("Erreur suppression utilisateur :", error);
+
+    return res.status(500).json({
+      message: "Erreur serveur",
     });
   }
 };
@@ -95,7 +144,8 @@ export const getAllUser = async (req: Request, res: Response) => {
   try {
     const users = await UserShema
       .find()
-      .select("-password");
+      .select("-password")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json(users);
   } catch (error) {
@@ -122,6 +172,12 @@ export const activateUser = async (req: Request, res: Response) => {
       });
     }
 
+    if (String(password).length < 8) {
+      return res.status(400).json({
+        message: "Le mot de passe doit contenir au moins 8 caractères.",
+      });
+    }
+
     const user = await UserShema.findOne({ id: id });
 
     if (!user) {
@@ -140,6 +196,8 @@ export const activateUser = async (req: Request, res: Response) => {
 
     user.password = hashedPassword;
     user.isActif = true;
+    // Le lien d'invitation ne doit plus fonctionner après activation.
+    user.invitationToken = null;
 
     await user.save();
 

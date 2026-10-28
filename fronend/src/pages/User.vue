@@ -26,14 +26,25 @@
 
           <button
             class="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
-            @click="showModal = true">
+            @click="openModal">
             <UserPlus :size="19" />
             Ajouter un administrateur
           </button>
         </div>
 
-        <!-- Statistique -->
+        <!-- Message global -->
+        <div v-if="pageMessage" :class="[
+          'flex items-start justify-between gap-4 rounded-xl px-4 py-3 text-sm',
+          pageMessage.type === 'success'
+            ? 'border border-green-100 bg-green-50 text-green-700'
+            : 'border border-red-100 bg-red-50 text-red-700'
+        ]">
+          <span>{{ pageMessage.text }}</span>
 
+          <button class="shrink-0 text-xs font-medium underline" @click="pageMessage = null">
+            Fermer
+          </button>
+        </div>
 
         <!-- Liste -->
         <div class="rounded-2xl bg-white p-6 shadow-sm">
@@ -64,12 +75,18 @@
                 <tr class="border-b border-gray-100 text-left text-sm text-gray-500">
                   <th class="p-4 font-medium">Nom</th>
                   <th class="p-4 font-medium">Email</th>
-                  <th class="p-4 font-medium">Rôle</th>
-                  <!-- <th class="p-4 font-medium">Actions</th> -->
+                  <th class="p-4 font-medium">Statut</th>
+                  <th class="p-4 text-right font-medium">Actions</th>
                 </tr>
               </thead>
 
               <tbody>
+                <tr v-if="loading">
+                  <td colspan="4" class="p-10 text-center text-sm text-gray-400">
+                    Chargement des administrateurs...
+                  </td>
+                </tr>
+
                 <tr v-for="admin in filteredAdmins" :key="admin.id"
                   class="border-b border-gray-100 transition hover:bg-gray-50">
                   <td class="p-4">
@@ -90,14 +107,31 @@
                   </td>
 
                   <td class="p-4">
-                    <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                      Administrateur
+                    <span :class="[
+                      'rounded-full px-3 py-1 text-xs font-medium',
+                      admin.isActif
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    ]">
+                      {{ admin.isActif ? "Actif" : "En attente" }}
+                    </span>
+                  </td>
+
+                  <td class="p-4 text-right">
+                    <button v-if="admin.id !== 'admin'"
+                      class="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                      :disabled="deletingId === admin.id" @click="removeAdmin(admin)">
+                      {{ deletingId === admin.id ? "Suppression..." : "Supprimer" }}
+                    </button>
+
+                    <span v-else class="text-xs text-gray-400">
+                      Compte principal
                     </span>
                   </td>
                 </tr>
 
                 <!-- Aucun résultat -->
-                <tr v-if="filteredAdmins.length === 0">
+                <tr v-if="!loading && filteredAdmins.length === 0">
                   <td colspan="4" class="p-10 text-center text-sm text-gray-400">
                     Aucun administrateur trouvé.
                   </td>
@@ -123,20 +157,49 @@
             </p>
           </div>
 
-          <button class="text-gray-400 transition hover:text-gray-700" @click="showModal = false">
+          <button class="text-gray-400 transition hover:text-gray-700" @click="closeModal">
             <X :size="22" />
           </button>
         </div>
 
-        <div class="flex flex-col gap-4">
+        <!-- Succès -->
+        <div v-if="createdSuccess" class="flex flex-col gap-4">
+          <div class="rounded-xl bg-green-50 p-4 text-sm text-green-700">
+            <p class="font-medium">{{ modalMessage }}</p>
+            <p v-if="createdInvitationLink" class="mt-1 text-xs">
+              Transmettez ce lien au nouvel administrateur s'il n'a pas reçu l'email :
+            </p>
+          </div>
+
+          <div v-if="createdInvitationLink" class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+            <p class="break-all text-xs text-gray-600">{{ createdInvitationLink }}</p>
+          </div>
+
+          <div class="flex justify-end gap-3">
+            <button v-if="createdInvitationLink"
+              class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+              @click="copyInvitationLink">
+              {{ linkCopied ? "Lien copié !" : "Copier le lien" }}
+            </button>
+
+            <button
+              class="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
+              @click="closeModal">
+              Fermer
+            </button>
+          </div>
+        </div>
+
+        <!-- Formulaire -->
+        <div v-else class="flex flex-col gap-4">
 
           <div class="flex flex-col gap-2">
             <label class="text-sm font-medium text-gray-700">
               Nom
             </label>
 
-            <input v-model="newAdmin.name" type="text" placeholder="Nom de l'administrateur"
-              class="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+            <input v-model="newAdmin.name" type="text" placeholder="Nom de l'administrateur" :disabled="sending"
+              class="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:bg-gray-50" />
           </div>
 
           <div class="flex flex-col gap-2">
@@ -144,20 +207,26 @@
               Email
             </label>
 
-            <input v-model="newAdmin.email" type="email" placeholder="admin@email.com"
-              class="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+            <input v-model="newAdmin.email" type="email" placeholder="admin@email.com" :disabled="sending"
+              class="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:bg-gray-50" />
           </div>
+
+          <div v-if="modalError" class="rounded-xl bg-red-50 p-3 text-sm text-red-600">
+            {{ modalError }}
+          </div>
+
           <div class="mt-2 flex justify-end gap-3">
             <button
-              class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
-              @click="showModal = false">
+              class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+              :disabled="sending" @click="closeModal">
               Annuler
             </button>
 
             <button
-              class="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
-              @click="addAdmin">
-              Ajouter
+              class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="sending || !newAdmin.name || !newAdmin.email" @click="addAdmin">
+              <Loader2 v-if="sending" :size="17" class="animate-spin" />
+              {{ sending ? "Envoi..." : "Ajouter" }}
             </button>
           </div>
 
@@ -169,18 +238,29 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { Users, UserPlus, Search, X } from "lucide-vue-next";
+import { Users, UserPlus, Search, X, Loader2 } from "lucide-vue-next";
 import Navbar from "../components/Navbar.vue";
 import type { User } from "../data/type.ts";
-import { onAddService, onGetService } from "../data/service.ts";
+import { onGetService, inviteAdminService, deleteUserService } from "../data/service.ts";
 
 const allUser = ref<User[]>([]);
+const loading = ref(true);
 
 const search = ref<string>("");
 const showModal = ref<boolean>(false);
 
-const newAdmin = ref<User>({
-  id: "",
+const sending = ref(false);
+const modalError = ref("");
+const modalMessage = ref("");
+const createdSuccess = ref(false);
+const createdInvitationLink = ref("");
+const linkCopied = ref(false);
+
+const deletingId = ref<string | null>(null);
+
+const pageMessage = ref<{ type: "success" | "error"; text: string } | null>(null);
+
+const newAdmin = ref({
   name: "",
   email: "",
 });
@@ -194,26 +274,112 @@ const filteredAdmins = computed(() => {
   );
 });
 
-const addAdmin = async () => {
-  if (!newAdmin.value.name || !newAdmin.value.email) {
-    alert("Veuillez remplir tous les champs.");
-    return;
-  }
-  const user = await onAddService('invitadmin', newAdmin.value);
-  if (user === 'success') {
-    newAdmin.value = {
-      id: "",
-      name: "",
-      email: "",
-    };
-    showModal.value = false;
-  }
+const loadUsers = async () => {
+  loading.value = true;
 
+  try {
+    allUser.value = await onGetService<User>("getalluser");
+  } finally {
+    loading.value = false;
+  }
 };
 
-onMounted(async () => {
-  const response = await onGetService<User>('getalluser');
-  allUser.value = response;
-  console.log(response)
-})
+const openModal = () => {
+  newAdmin.value = { name: "", email: "" };
+  modalError.value = "";
+  modalMessage.value = "";
+  createdSuccess.value = false;
+  createdInvitationLink.value = "";
+  linkCopied.value = false;
+  showModal.value = true;
+};
+
+const closeModal = () => {
+  if (sending.value) return;
+
+  showModal.value = false;
+  modalError.value = "";
+  modalMessage.value = "";
+  createdSuccess.value = false;
+  createdInvitationLink.value = "";
+  linkCopied.value = false;
+};
+
+const addAdmin = async () => {
+  modalError.value = "";
+
+  if (!newAdmin.value.name || !newAdmin.value.email) {
+    modalError.value = "Veuillez remplir tous les champs.";
+    return;
+  }
+
+  const email = newAdmin.value.email.trim().toLowerCase();
+  const alreadyExists = allUser.value.some(
+    (admin) => admin.email?.toLowerCase() === email
+  );
+
+  if (alreadyExists) {
+    modalError.value = "Cet email est déjà utilisé par un autre administrateur.";
+    return;
+  }
+
+  sending.value = true;
+
+  try {
+    const result = await inviteAdminService(newAdmin.value.name.trim(), email);
+
+    if (!result.success) {
+      modalError.value = result.message;
+      return;
+    }
+
+    modalMessage.value = result.message;
+    createdSuccess.value = true;
+    createdInvitationLink.value = result.data?.invitationLink ?? "";
+
+    pageMessage.value = {
+      type: result.data?.emailSent ? "success" : "error",
+      text: result.message,
+    };
+
+    newAdmin.value = { name: "", email: "" };
+
+    await loadUsers();
+  } finally {
+    sending.value = false;
+  }
+};
+
+const copyInvitationLink = async () => {
+  try {
+    await navigator.clipboard.writeText(createdInvitationLink.value);
+    linkCopied.value = true;
+  } catch (error) {
+    console.error("Erreur copie du lien :", error);
+    linkCopied.value = false;
+  }
+};
+
+const removeAdmin = async (admin: User) => {
+  if (!confirm(`Supprimer l'administrateur ${admin.name} (${admin.email}) ?`)) return;
+
+  deletingId.value = admin.id;
+
+  try {
+    const result = await deleteUserService(admin.id);
+
+    pageMessage.value = {
+      type: result.success ? "success" : "error",
+      text: result.message,
+    };
+
+    if (result.success) {
+      await loadUsers();
+    }
+  } finally {
+    deletingId.value = null;
+  }
+};
+
+onMounted(loadUsers);
 </script>

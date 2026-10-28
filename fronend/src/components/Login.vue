@@ -102,23 +102,28 @@ const error = ref<string>("");
 
 const emits = defineEmits<{ (e: "loged", loged: UserConnected): void }>();
 const login = async () => {
-  if (!email || !password) {
+  if (!email.value || !password.value) {
     error.value = "Veuillez remplir tous les champs.";
     return;
   }
 
+  loading.value = true;
+  error.value = "";
+
   try {
     const user = await authService<User>(email.value, password.value)
-    
-    if (user) {
-      const userConnecter : UserConnected = {
-        user : user,
-        isConnected : true
-      }
-      emits("loged", userConnecter)
-      error.value = "";
-      loading.value = true;
+
+    // authService renvoie null en cas d'échec (mauvais identifiants, serveur injoignable, CORS...)
+    if (!user) {
+      error.value = "Email ou mot de passe incorrect, ou serveur injoignable.";
+      return;
     }
+
+    const userConnecter : UserConnected = {
+      user : user,
+      isConnected : true
+    }
+    emits("loged", userConnecter)
   } catch (err) {
     console.error(err);
     error.value = "Email ou mot de passe incorrect.";

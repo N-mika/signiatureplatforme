@@ -4,7 +4,7 @@ import { createDocument, getAllDocument, getDocumentById, getDocumentByToken, ge
 import { upload } from "../middleware/upload.middleware";
 import { downloadSignedDocument } from "../controllers/downloade.controller";
 import { auth } from "../controllers/auth.controller";
-import { activateUser, createUser, getAllUser, getUserById } from "../controllers/user.controller";
+import { activateUser, createUser, deleteUser, getAllUser, getUserById } from "../controllers/user.controller";
 import { signDocument } from "../controllers/signedocument.controller";
 const router = Router();
 
@@ -38,4 +38,5 @@ router.get("/getuser/:token", getUserById);
 // Activer un compte 
 router.put("/activateuser",  activateUser);
 router.get("/getalluser", getAllUser);
+router.delete("/user/:id", deleteUser);
 export default router;

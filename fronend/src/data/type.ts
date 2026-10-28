@@ -3,6 +3,7 @@ export type User = {
   email: string;
   password?: string;
   name: string;
+  isActif?: boolean;
 }
 export type UserConnected = {
   user: User,

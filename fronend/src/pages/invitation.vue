@@ -22,7 +22,7 @@
           <p class="mt-4 text-sm text-gray-500">Vérification de votre invitation...</p>
         </div>
 
-        <div v-else-if="error && !user.name" class="py-8 text-center">
+        <div v-else-if="invitationInvalid" class="py-8 text-center">
 
           <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500">
             <AlertCircle :size="24" />
@@ -125,7 +125,7 @@
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ShieldCheck, Lock, CheckCircle, AlertCircle } from "lucide-vue-next";
-import { onGetByIdService, onUpdateService } from "../data/service";
+import { loadInvitationService, activateUserService } from "../data/service";
 import type { User } from "../data/type";
 
 const route = useRoute();
@@ -143,20 +143,31 @@ const confirmPassword = ref("");
 
 const loading = ref(true);
 const submitting = ref(false);
+const invitationInvalid = ref(false);
 
 const error = ref("");
 const success = ref("");
 
 const loadInvitation = async () => {
   try {
-    const response = await onGetByIdService<User>('getuser', token);
-    if (response) {
-      user.value = response
+    const response = await loadInvitationService(token);
+
+    if (!response.success || !response.data) {
+      invitationInvalid.value = true;
+      error.value = "Cette invitation n'est plus valide.";
+      return;
     }
-  } catch (err: any) {
-    error.value =
-      err.response?.data?.message ||
-      "Cette invitation n'est plus valide.";
+
+    if (response.data.isActif) {
+      invitationInvalid.value = true;
+      error.value = "Cette invitation a déjà été utilisée. Connectez-vous avec votre mot de passe.";
+      return;
+    }
+
+    user.value = {
+      ...response.data,
+      password: "",
+    };
   } finally {
     loading.value = false;
   }
@@ -164,11 +175,14 @@ const loadInvitation = async () => {
 
 const acceptInvitation = async () => {
   error.value = "";
-  if (user.value.password !== confirmPassword.value) {
+
+  const password = user.value.password ?? "";
+
+  if (password !== confirmPassword.value) {
     error.value = "Les mots de passe ne correspondent pas.";
     return;
   }
-  if (user.value.password.length < 8) {
+  if (password.length < 8) {
     error.value = "Le mot de passe doit contenir au moins 8 caractères.";
     return;
   }
@@ -176,15 +190,15 @@ const acceptInvitation = async () => {
   submitting.value = true;
 
   try {
-    if (user) {
-      const response = await onUpdateService('activateuser', user.value);
-      if (response === "success") {
-        success.value = "Votre compte administrateur a été créé avec succès.";
-        setTimeout(() => { router.push("/") }, 2500);
-      }
+    const response = await activateUserService(user.value.id, password);
+
+    if (!response.success) {
+      error.value = response.message;
+      return;
     }
-  } catch (err: any) {
-    error.value = err.response?.data?.message ||  "Impossible de créer votre compte.";
+
+    success.value = response.message;
+    setTimeout(() => { router.push("/") }, 2500);
   } finally {
     submitting.value = false;
   }

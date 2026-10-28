@@ -2,8 +2,11 @@ import axios from "axios";
 import type { User, Document, documentCreate } from "./type";
 import { supabase } from "../tools/supabase";
 
-// export const API = "http://localhost:3000";
-export const API = "https://signiatureplatforme.onrender.com";
+// En développement, on passe par le proxy Vite (/api) pour éviter les blocages CORS.
+// En production, on utilise VITE_API_URL s'il est défini, sinon le backend déployé.
+export const API =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.DEV ? "/api" : "https://signiatureplatforme.onrender.com");
 
 
 // CREATE
@@ -141,3 +144,75 @@ export const authService = async <T>(email: string, password: string): Promise<T
     return null
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Gestion des administrateurs                                         */
+/* ------------------------------------------------------------------ */
+
+export type ApiResult<T = unknown> = {
+  success: boolean;
+  message: string;
+  data?: T;
+};
+
+const getErrorMessage = (error: any): string =>
+  error?.response?.data?.message ||
+  "Serveur injoignable. Vérifiez votre connexion Internet.";
+
+export const inviteAdminService = async (
+  name: string,
+  email: string
+): Promise<ApiResult<{ invitationLink: string; emailSent: boolean }>> => {
+  try {
+    const response = await axios.post(`${API}/invitadmin`, { name, email });
+
+    return {
+      success: true,
+      message: response.data?.message ?? "Administrateur créé.",
+      data: {
+        invitationLink: response.data?.invitationLink ?? "",
+        emailSent: response.data?.emailSent !== false,
+      },
+    };
+  } catch (error) {
+    console.error("Erreur invitation administrateur :", error);
+    return { success: false, message: getErrorMessage(error) };
+  }
+};
+
+export const deleteUserService = async (id: string): Promise<ApiResult> => {
+  try {
+    const response = await axios.delete(`${API}/user/${id}`);
+    return {
+      success: true,
+      message: response.data?.message ?? "Utilisateur supprimé.",
+    };
+  } catch (error) {
+    console.error("Erreur suppression utilisateur :", error);
+    return { success: false, message: getErrorMessage(error) };
+  }
+};
+
+export const loadInvitationService = async (token: string): Promise<ApiResult<User>> => {
+  try {
+    const response = await axios.get<User>(`${API}/getuser/${token}`);
+    return { success: true, message: "", data: response.data };
+  } catch (error) {
+    return { success: false, message: getErrorMessage(error) };
+  }
+};
+
+export const activateUserService = async (
+  id: string,
+  password: string
+): Promise<ApiResult> => {
+  try {
+    const response = await axios.put(`${API}/activateuser`, { id, password });
+    return {
+      success: true,
+      message: response.data?.message ?? "Compte activé avec succès.",
+    };
+  } catch (error) {
+    return { success: false, message: getErrorMessage(error) };
+  }
+};
